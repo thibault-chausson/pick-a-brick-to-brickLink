@@ -222,7 +222,11 @@
   <div class="card">
     <h2>2. CSV Pick a Brick</h2>
     <label for="csvInput">Contenu du CSV (colonnes <code>elementId,quantity,error</code>)</label>
-    <textarea id="csvInput" spellcheck="false"></textarea>
+    <textarea
+      id="csvInput"
+      spellcheck="false"
+      placeholder="elementId,quantity,error&#10;4261621,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick&#10;4183043,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick"
+    ></textarea><textarea id="csvInput" spellcheck="false"></textarea>
     <p class="hint">La colonne <code>error</code> est ignorée : elle vient de Pick a Brick et ne sert pas à la conversion.</p>
 
     <div class="actions">
@@ -280,22 +284,7 @@
 (function(){
   "use strict";
 
-  const DEFAULT_CSV = `elementId,quantity,error
-4261621,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-4183043,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-4183060,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-4144023,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-6030718,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-4143343,5,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-6320306,2,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-4184168,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-4184166,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-379405,2,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-6160293,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-4522035,2,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-6078086,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-486424,2,L'ID de l'élément est actuellement indisponible sur Pick a Brick
-6376458,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick`;
+  const DEFAULT_CSV = '';
 
   const REQUEST_DELAY_MS = 350;   // délai entre deux requêtes séquentielles
   const MAX_RETRIES = 3;          // nombre de tentatives en cas de 429 / erreur réseau
@@ -321,8 +310,7 @@
 
   const xmlCard = document.getElementById('xmlCard');
   const xmlOutput = document.getElementById('xmlOutput');
-
-  csvInput.value = DEFAULT_CSV;
+  
   updateRowCount();
   csvInput.addEventListener('input', updateRowCount);
 
