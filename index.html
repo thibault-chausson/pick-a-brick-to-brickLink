@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pick a Brick → BrickLink XML</title>
+<style>
+  :root{
+    --ink:#1b1712;
+    --paper:#f6f2ea;
+    --panel:#fffdf9;
+    --line:#ddd3c0;
+    --brick:#c23b22;
+    --brick-dark:#9c2c18;
+    --ok:#2f6b3a;
+    --ok-bg:#e8f2e7;
+    --err:#a33;
+    --err-bg:#fbe9e7;
+    --muted:#6b6255;
+    font-size:16px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height:1.45;
+  }
+  header{
+    padding:28px 24px 18px;
+    border-bottom:3px solid var(--brick);
+    background:
+      repeating-linear-gradient(90deg, transparent 0 38px, rgba(0,0,0,0.03) 38px 40px);
+  }
+  header h1{
+    margin:0 0 4px;
+    font-size:1.6rem;
+    letter-spacing:0.2px;
+  }
+  header h1 .stud{
+    display:inline-block;
+    width:14px;height:14px;
+    border-radius:50%;
+    background:var(--brick);
+    margin-right:10px;
+    vertical-align:middle;
+    box-shadow: 0 0 0 4px #fff inset, 0 0 0 5px var(--brick-dark);
+  }
+  header p{margin:0;color:var(--muted);max-width:70ch;}
+
+  main{max-width:980px;margin:0 auto;padding:24px;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:20px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    margin:0 0 12px;
+    font-size:1.05rem;
+    border-left:5px solid var(--brick);
+    padding-left:10px;
+  }
+
+  label{display:block;font-weight:600;margin-bottom:6px;font-size:0.92rem;}
+  .hint{color:var(--muted);font-size:0.85rem;margin:4px 0 12px;}
+
+  input[type="password"], input[type="text"]{
+    width:100%;
+    padding:9px 10px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    font-size:0.95rem;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus, textarea:focus, button:focus{
+    outline:3px solid #f0c14b;
+    outline-offset:1px;
+  }
+
+  textarea{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:10px;
+    font-family:"SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    font-size:0.85rem;
+    resize:vertical;
+    background:#fff;
+    color:var(--ink);
+  }
+  #csvInput{height:220px;}
+  #xmlOutput{height:220px;background:#fbfaf7;}
+
+  .row{display:flex;gap:20px;flex-wrap:wrap;}
+  .row > div{flex:1 1 320px;}
+
+  button{
+    background:var(--brick);
+    color:#fff;
+    border:none;
+    padding:11px 20px;
+    border-radius:4px;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow: inset 0 -3px 0 var(--brick-dark);
+  }
+  button:hover:not(:disabled){background:var(--brick-dark);}
+  button:disabled{
+    background:#c9c1b3;
+    box-shadow:none;
+    cursor:not-allowed;
+  }
+  button.secondary{
+    background:var(--panel);
+    color:var(--ink);
+    border:1px solid var(--line);
+    box-shadow:none;
+  }
+  button.secondary:hover:not(:disabled){background:#efe9dd;}
+
+  .actions{display:flex;gap:12px;align-items:center;margin-top:14px;flex-wrap:wrap;}
+
+  .progress-wrap{
+    margin-top:16px;
+    background:#efe9dd;
+    border:1px solid var(--line);
+    border-radius:20px;
+    height:20px;
+    overflow:hidden;
+    position:relative;
+  }
+  .progress-bar{
+    height:100%;
+    width:0%;
+    background:linear-gradient(90deg, var(--brick), var(--brick-dark));
+    transition:width 0.2s ease;
+  }
+  .progress-label{
+    margin-top:6px;
+    font-size:0.85rem;
+    color:var(--muted);
+  }
+
+  .summary{
+    display:flex;
+    gap:16px;
+    margin-top:14px;
+    flex-wrap:wrap;
+  }
+  .summary .pill{
+    padding:8px 14px;
+    border-radius:20px;
+    font-weight:600;
+    font-size:0.9rem;
+  }
+  .pill.ok{background:var(--ok-bg);color:var(--ok);}
+  .pill.err{background:var(--err-bg);color:var(--err);}
+  .pill.total{background:#efe9dd;color:var(--ink);}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.85rem;
+    margin-top:14px;
+  }
+  th, td{
+    text-align:left;
+    padding:7px 8px;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  th{
+    background:#efe9dd;
+    position:sticky;
+    top:0;
+  }
+  td.num{text-align:right;}
+  .table-wrap{max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:4px;}
+
+  tr.status-ok td.status{color:var(--ok);font-weight:600;}
+  tr.status-err td.status{color:var(--err);font-weight:600;}
+  tr.status-pending td.status{color:var(--muted);font-style:italic;}
+
+  footer{
+    max-width:980px;
+    margin:0 auto;
+    padding:0 24px 40px;
+    color:var(--muted);
+    font-size:0.8rem;
+  }
+
+  code{
+    background:#efe9dd;
+    padding:1px 5px;
+    border-radius:3px;
+    font-size:0.85em;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="stud"></span>Pick a Brick → XML BrickLink</h1>
+  <p>Colle ton export CSV Pick a Brick, l'outil interroge l'API Rebrickable pour retrouver les références BrickLink correspondantes et génère un fichier d'import d'inventaire prêt pour BrickLink. Tout se passe dans ton navigateur, rien n'est envoyé ailleurs qu'à Rebrickable.</p>
+</header>
+
+<main>
+
+  <div class="card">
+    <h2>1. Clé API Rebrickable</h2>
+    <label for="apiKey">Clé API</label>
+    <input type="password" id="apiKey" placeholder="Ta clé API Rebrickable" autocomplete="off">
+    <p class="hint">Générée depuis ton compte Rebrickable, page Settings → API. Elle reste uniquement dans ce navigateur, en mémoire le temps de la session : elle n'est jamais écrite dans le XML ni stockée sur disque.</p>
+  </div>
+
+  <div class="card">
+    <h2>2. CSV Pick a Brick</h2>
+    <label for="csvInput">Contenu du CSV (colonnes <code>elementId,quantity,error</code>)</label>
+    <textarea id="csvInput" spellcheck="false"></textarea>
+    <p class="hint">La colonne <code>error</code> est ignorée : elle vient de Pick a Brick et ne sert pas à la conversion.</p>
+
+    <div class="actions">
+      <button id="convertBtn">Convertir</button>
+      <span id="rowCount" class="hint"></span>
+    </div>
+
+    <div class="progress-wrap" id="progressWrap" style="display:none;">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-label" id="progressLabel"></div>
+
+    <div class="summary" id="summary" style="display:none;">
+      <span class="pill ok" id="pillOk">0 réussies</span>
+      <span class="pill err" id="pillErr">0 en erreur</span>
+      <span class="pill total" id="pillTotal">0 au total</span>
+    </div>
+  </div>
+
+  <div class="card" id="resultsCard" style="display:none;">
+    <h2>3. Détail des conversions</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Element ID</th>
+            <th>Qté</th>
+            <th>Pièce LEGO</th>
+            <th>Couleur</th>
+            <th>BrickLink</th>
+            <th>Couleur BL</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="xmlCard" style="display:none;">
+    <h2>4. XML d'inventaire BrickLink</h2>
+    <textarea id="xmlOutput" readonly spellcheck="false"></textarea>
+    <div class="actions">
+      <button id="downloadBtn" class="secondary">Télécharger le XML</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Les lignes dont la pièce, la couleur ou la correspondance BrickLink ne sont pas trouvées sur Rebrickable sont marquées en erreur et exclues du XML — aucune correspondance n'est devinée. Les requêtes sont envoyées une par une avec un court délai pour respecter les limites de l'API Rebrickable.
+</footer>
+
+<script>
+(function(){
+  "use strict";
+
+  const DEFAULT_CSV = `elementId,quantity,error
+4261621,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+4183043,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+4183060,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+4144023,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+6030718,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+4143343,5,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+6320306,2,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+4184168,4,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+4184166,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+379405,2,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+6160293,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+4522035,2,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+6078086,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+486424,2,L'ID de l'élément est actuellement indisponible sur Pick a Brick
+6376458,1,L'ID de l'élément est actuellement indisponible sur Pick a Brick`;
+
+  const REQUEST_DELAY_MS = 350;   // délai entre deux requêtes séquentielles
+  const MAX_RETRIES = 3;          // nombre de tentatives en cas de 429 / erreur réseau
+  const RETRY_BASE_DELAY_MS = 800;
+
+  const csvInput = document.getElementById('csvInput');
+  const apiKeyInput = document.getElementById('apiKey');
+  const convertBtn = document.getElementById('convertBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const rowCountEl = document.getElementById('rowCount');
+
+  const progressWrap = document.getElementById('progressWrap');
+  const progressBar = document.getElementById('progressBar');
+  const progressLabel = document.getElementById('progressLabel');
+
+  const summaryEl = document.getElementById('summary');
+  const pillOk = document.getElementById('pillOk');
+  const pillErr = document.getElementById('pillErr');
+  const pillTotal = document.getElementById('pillTotal');
+
+  const resultsCard = document.getElementById('resultsCard');
+  const resultsBody = document.getElementById('resultsBody');
+
+  const xmlCard = document.getElementById('xmlCard');
+  const xmlOutput = document.getElementById('xmlOutput');
+
+  csvInput.value = DEFAULT_CSV;
+  updateRowCount();
+  csvInput.addEventListener('input', updateRowCount);
+
+  function updateRowCount(){
+    const rows = parseCsv(csvInput.value);
+    rowCountEl.textContent = rows.length + ' ligne(s) détectée(s)';
+  }
+
+  // --- Parsing CSV minimal, tolérant aux guillemets ---
+  function parseCsv(text){
+    const lines = text.split(/\r\n|\n|\r/).map(l => l.trim()).filter(l => l.length > 0);
+    if (lines.length === 0) return [];
+
+    const rows = [];
+    let start = 0;
+    // Ignore la ligne d'en-tête si elle correspond aux noms de colonnes attendus
+    if (/^elementid\s*,\s*quantity/i.test(lines[0])) {
+      start = 1;
+    }
+
+    for (let i = start; i < lines.length; i++) {
+      const fields = splitCsvLine(lines[i]);
+      if (fields.length < 2) continue;
+      const elementId = (fields[0] || '').trim();
+      const quantity = parseInt((fields[1] || '').trim(), 10);
+      if (!elementId || isNaN(quantity)) continue;
+      rows.push({ elementId, quantity });
+    }
+    return rows;
+  }
+
+  function splitCsvLine(line){
+    // Découpe en respectant les guillemets doubles, sans dépendance externe.
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else { inQuotes = !inQuotes; }
+      } else if (ch === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current);
+    return result;
+  }
+
+  function escapeXml(str){
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  // --- Appel Rebrickable pour un element_id, avec retry sur 429 / erreurs réseau ---
+  async function fetchElement(elementId, apiKey){
+    const url = 'https://rebrickable.com/api/v3/lego/elements/' + encodeURIComponent(elementId) + '/';
+    let attempt = 0;
+    while (true) {
+      attempt++;
+      let response;
+      try {
+        response = await fetch(url, {
+          method: 'GET',
+          headers: { 'Authorization': 'key ' + apiKey }
+        });
+      } catch (networkErr) {
+        if (attempt >= MAX_RETRIES) {
+          throw new Error('Erreur réseau : ' + networkErr.message);
+        }
+        await sleep(RETRY_BASE_DELAY_MS * attempt);
+        continue;
+      }
+
+      if (response.status === 429 && attempt < MAX_RETRIES) {
+        await sleep(RETRY_BASE_DELAY_MS * attempt * 2);
+        continue;
+      }
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('Clé API refusée (HTTP ' + response.status + ')');
+      }
+      if (response.status === 404) {
+        throw new Error('Element ID introuvable sur Rebrickable (HTTP 404)');
+      }
+      if (!response.ok) {
+        if (attempt < MAX_RETRIES) {
+          await sleep(RETRY_BASE_DELAY_MS * attempt);
+          continue;
+        }
+        throw new Error('Erreur HTTP ' + response.status);
+      }
+
+      try {
+        return await response.json();
+      } catch (parseErr) {
+        throw new Error('Réponse JSON invalide de Rebrickable');
+      }
+    }
+  }
+
+  // --- Extraction de la correspondance BrickLink à partir d'une réponse /elements/ ---
+  // On ne suppose rien : on vérifie chaque étape et on renvoie un statut d'erreur précis
+  // dès qu'une information manque, plutôt que d'inventer une valeur.
+  function extractBrickLinkMapping(data){
+    const result = {
+      partNum: null,
+      partName: null,
+      colorName: null,
+      blPartId: null,
+      blColorId: null,
+      error: null
+    };
+
+    const part = data && data.part;
+    const color = data && data.color;
+
+    if (!part) {
+      result.error = 'Pièce introuvable dans la réponse Rebrickable';
+      return result;
+    }
+    result.partNum = part.part_num || null;
+    result.partName = part.name || null;
+
+    if (!color) {
+      result.error = 'Couleur introuvable dans la réponse Rebrickable';
+      return result;
+    }
+    result.colorName = color.name || null;
+
+    // Pièce : external_ids.BrickLink est un tableau de références (chaînes)
+    const partBl = part.external_ids && part.external_ids.BrickLink;
+    if (!Array.isArray(partBl) || partBl.length === 0) {
+      result.error = 'Aucune référence BrickLink connue pour cette pièce sur Rebrickable';
+      return result;
+    }
+    result.blPartId = String(partBl[0]);
+
+    // Couleur : external_ids.BrickLink est un objet { ext_ids: [...], ext_descrs: [...] }
+    const colorBl = color.external_ids && color.external_ids.BrickLink;
+    if (!colorBl || !Array.isArray(colorBl.ext_ids) || colorBl.ext_ids.length === 0) {
+      result.error = 'Aucun identifiant de couleur BrickLink connu pour cette couleur sur Rebrickable';
+      return result;
+    }
+    result.blColorId = String(colorBl.ext_ids[0]);
+
+    return result;
+  }
+
+  function setRowStatus(rowEl, status, message){
+    rowEl.classList.remove('status-ok', 'status-err', 'status-pending');
+    rowEl.classList.add('status-' + status);
+    rowEl.querySelector('td.status').textContent = message;
+  }
+
+  async function runConversion(){
+    const apiKey = apiKeyInput.value.trim();
+    const rows = parseCsv(csvInput.value);
+
+    if (!apiKey) {
+      alert('Merci de renseigner ta clé API Rebrickable.');
+      return;
+    }
+    if (rows.length === 0) {
+      alert("Aucune ligne exploitable n'a été trouvée dans le CSV.");
+      return;
+    }
+
+    convertBtn.disabled = true;
+    downloadBtn.disabled = true;
+    resultsCard.style.display = 'block';
+    xmlCard.style.display = 'none';
+    summaryEl.style.display = 'none';
+    resultsBody.innerHTML = '';
+    progressWrap.style.display = 'block';
+    progressBar.style.width = '0%';
+    progressLabel.textContent = 'Préparation de ' + rows.length + ' ligne(s)...';
+
+    // Prépare toutes les lignes du tableau à l'avance, en "en attente"
+    const rowEls = rows.map(r => {
+      const tr = document.createElement('tr');
+      tr.classList.add('status-pending');
+      tr.innerHTML =
+        '<td>' + escapeHtml(r.elementId) + '</td>' +
+        '<td class="num">' + r.quantity + '</td>' +
+        '<td class="part">—</td>' +
+        '<td class="color">—</td>' +
+        '<td class="bl">—</td>' +
+        '<td class="blcolor">—</td>' +
+        '<td class="status">En attente…</td>';
+      resultsBody.appendChild(tr);
+      return tr;
+    });
+
+    let okCount = 0;
+    let errCount = 0;
+    const xmlItems = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const tr = rowEls[i];
+
+      progressLabel.textContent =
+        'Ligne ' + (i + 1) + ' / ' + rows.length + ' — élément ' + row.elementId;
+
+      try {
+        const data = await fetchElement(row.elementId, apiKey);
+        const mapping = extractBrickLinkMapping(data);
+
+        tr.querySelector('td.part').textContent =
+          mapping.partNum ? (mapping.partNum + (mapping.partName ? ' — ' + mapping.partName : '')) : '—';
+        tr.querySelector('td.color').textContent = mapping.colorName || '—';
+        tr.querySelector('td.bl').textContent = mapping.blPartId || '—';
+        tr.querySelector('td.blcolor').textContent = mapping.blColorId || '—';
+
+        if (mapping.error) {
+          errCount++;
+          setRowStatus(tr, 'err', mapping.error);
+        } else {
+          okCount++;
+          setRowStatus(tr, 'ok', 'OK');
+          xmlItems.push({
+            itemId: mapping.blPartId,
+            colorId: mapping.blColorId,
+            qty: row.quantity
+          });
+        }
+      } catch (err) {
+        errCount++;
+        setRowStatus(tr, 'err', err.message || 'Erreur inconnue');
+      }
+
+      const pct = Math.round(((i + 1) / rows.length) * 100);
+      progressBar.style.width = pct + '%';
+
+      // Espace les requêtes pour respecter les limites de l'API Rebrickable,
+      // sauf après la toute dernière ligne.
+      if (i < rows.length - 1) {
+        await sleep(REQUEST_DELAY_MS);
+      }
+    }
+
+    progressLabel.textContent = 'Terminé — ' + rows.length + ' ligne(s) traitée(s).';
+
+    pillOk.textContent = okCount + ' réussie' + (okCount > 1 ? 's' : '');
+    pillErr.textContent = errCount + ' en erreur' + (errCount > 1 ? 's' : '');
+    pillTotal.textContent = rows.length + ' au total';
+    summaryEl.style.display = 'flex';
+
+    const xml = buildXml(xmlItems);
+    xmlOutput.value = xml;
+    xmlCard.style.display = xmlItems.length > 0 ? 'block' : 'none';
+
+    convertBtn.disabled = false;
+    downloadBtn.disabled = xmlItems.length === 0;
+  }
+
+  function buildXml(items){
+    const lines = [];
+    lines.push('<?xml version="1.0" encoding="UTF-8"?>');
+    lines.push('<INVENTORY>');
+    for (const item of items) {
+      lines.push('    <ITEM>');
+      lines.push('        <ITEMTYPE>P</ITEMTYPE>');
+      lines.push('        <ITEMID>' + escapeXml(item.itemId) + '</ITEMID>');
+      lines.push('        <COLOR>' + escapeXml(item.colorId) + '</COLOR>');
+      lines.push('        <QTY>' + escapeXml(item.qty) + '</QTY>');
+      lines.push('    </ITEM>');
+    }
+    lines.push('</INVENTORY>');
+    return lines.join('\n');
+  }
+
+  function downloadXml(){
+    const content = xmlOutput.value;
+    if (!content) return;
+    const blob = new Blob([content], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'bricklink_inventory.xml';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  convertBtn.addEventListener('click', () => {
+    runConversion().catch(err => {
+      alert('Erreur inattendue : ' + err.message);
+      convertBtn.disabled = false;
+    });
+  });
+
+  downloadBtn.addEventListener('click', downloadXml);
+})();
+</script>
+
+</body>
+</html>
